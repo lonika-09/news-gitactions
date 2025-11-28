@@ -1,0 +1,49 @@
+---
+- hosts: web
+  become: yes
+  tasks:
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Remove old frontend files
+      file:
+        path: /var/www/html/
+        state: absent
+
+    - name: Create frontend directory
+      file:
+        path: /var/www/html/
+        state: directory
+
+    - name: Copy React build files
+      copy:
+        src: ./build/
+        dest: /var/www/html/
+        owner: www-data
+        group: www-data
+
+    - name: Configure Nginx for React SPA
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80;
+              server_name _;
+
+              root /var/www/html;
+              index index.html;
+
+              location / {
+                  try_files $uri /index.html;
+              }
+          }
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+ 
